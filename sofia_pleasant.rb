@@ -53,6 +53,8 @@ Telegram::Bot::Client.run(token) do |bot|
       send_message("#{sad_phrases.sample} #{sad_smiles.sample}")
     when '/комплимент'
       send_message("#{compliments.sample} #{pleasant_smiles.sample}")
+    when '/тест'
+      send_message('тест')
     end
   end
 end
