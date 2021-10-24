@@ -53,7 +53,7 @@ message_to_text = {
   '/поздороваться' => greeting,
   '/попрощаться' => "#{sad_phrases.sample} #{sad_smiles.sample}",
   '/комплимент' => "#{compliments.sample} #{pleasant_smiles.sample}",
-  '/совет' => 'Функция в данный момент недоступна.\nПовторите попытку позже.\nСовет он блять мне даёт'
+  '/совет' => "Функция в данный момент недоступна.\nПовторите попытку позже.\n\n\nСовет он блять мне даёт"
 }
 
 def send_message(text)
@@ -65,9 +65,7 @@ Telegram::Bot::Client.run(token) do |bot|
 
   bot.listen do |message|
     @chat_id = message.chat.id
-    # text = message_to_text[message.text]
-    send_message('1')
+    text = message_to_text[message.text]
+    send_message(text)
   end
 end
-
-puts message_to_text['/совет']
