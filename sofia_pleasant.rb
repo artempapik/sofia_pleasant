@@ -67,6 +67,7 @@ message_to_text = {
 
 def send_message(text)
   @bot.api.send_message(chat_id: @chat_id, text: text)
+  # @bot.api.send_message(chat_id: @chat_id, text: '111211')
 end
 
 Telegram::Bot::Client.run(token) do |bot|
@@ -74,7 +75,8 @@ Telegram::Bot::Client.run(token) do |bot|
 
   bot.listen do |message|
     @chat_id = message.chat.id
-    text = message_to_text[message.text]
+    message = message.text
+    text = message_to_text.key?(message) ? message_to_text[message] : 'простити я не могу ответит'
     send_message(text)
   end
 end
