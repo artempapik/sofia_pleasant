@@ -43,7 +43,11 @@ token = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
   'каждый ден ваша внешность заставляет меня пополнять мою базу комплиментов',
   'А можно быть ещё милее?',
   'У вас очень сексуальные соски.',
-  'кисивая Софа-не-диван'
+  'кисивая Софа-не-диван',
+  'ты очень мило спишь и не хочешь, чтобы эту девушку розбуркали)',
+  'тяжело представить жизнь без тебя',
+  'почему ты не появилась раньше?',
+  'комочек боли, но не хочу, чтобы несла её сама'
 ]
 
 @pleasant_smiles = ['❤️', '😃', '😏', '😍', '🥰', '🤓', '😑', '💩', '🐁', '🌚', '🌝']
@@ -77,22 +81,29 @@ token = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
   'та введи ты другую фразу Госпади'
 ]
 
-def send_message(text)
-  @bot.api.send_message(chat_id: @chat_id, text: text)
-end
-
 # rubocop:disable Metrics/MethodLength
+
+def send_message(text)
+  keyboard = [
+    Telegram::Bot::Types::KeyboardButton.new(text: 'комплимент'),
+    Telegram::Bot::Types::KeyboardButton.new(text: 'совет'),
+    Telegram::Bot::Types::KeyboardButton.new(text: 'попрощаться')
+  ]
+  markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
+
+  @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+end
 
 def get_text_from_message(message)
   case message
-  when '/поздороваться'
+  when '/start'
     @greeting
-  when '/попрощаться'
-    "#{@sad_phrases.sample} #{@sad_smiles.sample}"
-  when '/комплимент'
+  when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
-  when '/совет'
+  when 'совет'
     @advices.sample
+  when 'попрощаться'
+    "#{@sad_phrases.sample} #{@sad_smiles.sample}"
   else
     @unable_responses.sample
   end
@@ -100,12 +111,12 @@ end
 
 # rubocop:enable Metrics/MethodLength
 
-Telegram::Bot::Client.run(token) do |bot|
+Telegram::Bot::Client.run token do |bot|
   @bot = bot
 
   bot.listen do |message|
     @chat_id = message.chat.id
-    text = get_text_from_message(message.text)
-    send_message(text)
+    text = get_text_from_message message.text
+    send_message text
   end
 end
