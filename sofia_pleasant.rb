@@ -71,6 +71,15 @@ token = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
   'почаще делай зарядку'
 ]
 
+@rude_phrases = [
+  'Совет свой сам себе посоветуй',
+  'не ори на меня',
+  'слушай, я щас достану свою куклу вуду',
+  'если ты пойдёшь на улицу, я пойду на тебя быковать, там холодно'
+]
+
+@rude_stickers = IO.readlines('sticker_ids.txt')
+
 @unable_responses = [
   'простити я не могу ответит',
   'та не могу я((',
@@ -87,20 +96,22 @@ def tg_button(text)
   Telegram::Bot::Types::KeyboardButton.new(text: text)
 end
 
-def send_message(text)
-  keyboard = [
-    [
-      tg_button('комплимент'),
-      tg_button('совет')
-    ],
-    [
-      tg_button('попрощаться'),
-      tg_button('быконуть')
-    ]
+@keyboard = [
+  [
+    tg_button('комплимент'),
+    tg_button('совет')
+  ],
+  [
+    tg_button('быконуть'),
+    tg_button('попрощаться')
   ]
-  markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
+]
 
-  @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+@markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: @keyboard)
+
+def send_message(text, is_rude: false)
+  @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: @markup
+  @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample.strip if is_rude
 end
 
 def get_text_from_message(message)
@@ -111,10 +122,10 @@ def get_text_from_message(message)
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
   when 'совет'
     @advices.sample
+  when 'быконуть'
+    @rude_phrases.sample
   when 'попрощаться'
     "#{@sad_phrases.sample} #{@sad_smiles.sample}"
-  when 'быконуть'
-    '228'
   else
     @unable_responses.sample
   end
@@ -127,7 +138,8 @@ Telegram::Bot::Client.run token do |bot|
 
   bot.listen do |message|
     @chat_id = message.chat.id
-    text = get_text_from_message message.text
-    send_message text
+    message = message.text
+    text = get_text_from_message message
+    send_message(text, is_rude: message == 'быконуть')
   end
 end
