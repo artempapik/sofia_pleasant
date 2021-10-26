@@ -83,11 +83,20 @@ token = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
 
 # rubocop:disable Metrics/MethodLength
 
+def tg_button(text)
+  Telegram::Bot::Types::KeyboardButton.new(text: text)
+end
+
 def send_message(text)
   keyboard = [
-    Telegram::Bot::Types::KeyboardButton.new(text: 'комплимент'),
-    Telegram::Bot::Types::KeyboardButton.new(text: 'совет'),
-    Telegram::Bot::Types::KeyboardButton.new(text: 'попрощаться')
+    [
+      tg_button('комплимент'),
+      tg_button('совет')
+    ],
+    [
+      tg_button('попрощаться'),
+      tg_button('быконуть')
+    ]
   ]
   markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
 
@@ -104,6 +113,8 @@ def get_text_from_message(message)
     @advices.sample
   when 'попрощаться'
     "#{@sad_phrases.sample} #{@sad_smiles.sample}"
+  when 'быконуть'
+    '228'
   else
     @unable_responses.sample
   end
