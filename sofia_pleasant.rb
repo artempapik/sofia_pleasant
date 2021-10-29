@@ -1,8 +1,15 @@
-# frozen_string_literal: true
-
 require 'telegram/bot'
+require 'nokogiri'
+require 'httparty'
 
-token = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
+# rubocop:disable Style/MutableConstant
+
+TOKEN = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
+POEMS_URL = 'https://www.culture.ru/literature/poems'
+
+# rubocop:enable Style/MutableConstant
+
+LAST_PAGE = 791
 
 @greeting = IO.read 'greeting.txt'
 @compliments = IO.readlines('compliments.txt').collect(&:strip)
@@ -21,12 +28,16 @@ end
 keyboard = [
   [
     tg_button('комплимент'),
-    tg_button('совет'),
-    tg_button('быконуть')
+    tg_button('совет')
   ],
   [
-    tg_button('попрощаться')
+    tg_button('быконуть'),
+    tg_button('стих')
   ]
+  # [
+  #   tg_button('поприветствовать'),
+  #   tg_button('попрощаться')
+  # ]
 ]
 
 @markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
@@ -37,10 +48,12 @@ def send_message(text, is_rude: false)
 end
 
 # rubocop:disable Metrics/MethodLength
+# rubocop:disable Metrics/AbcSize
+# rubocop:disable Metrics/CyclomaticComplexity
 
 def get_text_from_message(message)
   case message
-  when '/start'
+  when '/start', 'поприветствовать'
     @greeting
   when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
@@ -48,6 +61,23 @@ def get_text_from_message(message)
     @advices.sample
   when 'быконуть'
     @rude_phrases.sample
+  when 'стих'
+    response = HTTParty.get("#{POEMS_URL}?page=#{rand(1..LAST_PAGE + 1)}")
+    html = response.body if response.code == 200
+    document = Nokogiri::HTML(html)
+
+    poem_elements = document.search('div.entity-cards_item.col')
+    poem_element = poem_elements[rand(0..poem_elements.length)]
+
+    poem_author = poem_element.search('a.card-heading_subtitle').text
+    poem_title = poem_element.search('a.card-heading_title-link').text
+
+    poem_text = ''
+    poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).each do |text_fragment|
+      poem_text << "#{text_fragment}\n"
+    end
+
+    "#{poem_author}\n\n#{poem_title}\n\n#{poem_text}"
   when 'попрощаться'
     "#{@sad_phrases.sample} #{@sad_smiles.sample}"
   else
@@ -56,8 +86,10 @@ def get_text_from_message(message)
 end
 
 # rubocop:enable Metrics/MethodLength
+# rubocop:enable Metrics/AbcSize
+# rubocop:enable Metrics/CyclomaticComplexity
 
-Telegram::Bot::Client.run token do |bot|
+Telegram::Bot::Client.run TOKEN do |bot|
   @bot = bot
 
   bot.listen do |message|
