@@ -53,7 +53,7 @@ def get_text_from_message(message)
     poem_text = poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).join("\n")
 
     "#{poem_author}\n\n#{poem_title}\n\n#{poem_text}"
-  when 'попрощаться'
+  when '/goodbye'
     "#{@sad_phrases.sample} #{@sad_smiles.sample}"
   else
     @unable_responses.sample
