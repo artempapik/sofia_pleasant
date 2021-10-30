@@ -1,7 +1,5 @@
-# frozen_string_literal: true
+source 'https://rubygems.org'
 
-source "https://rubygems.org"
-
-gem "telegram-bot-ruby"
-gem "nokogiri"
-gem "httparty"
+gem 'httparty'
+gem 'nokogiri'
+gem 'telegram-bot-ruby'

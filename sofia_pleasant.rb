@@ -1,14 +1,9 @@
-require 'telegram/bot'
-require 'nokogiri'
 require 'httparty'
-
-# rubocop:disable Style/MutableConstant
+require 'nokogiri'
+require 'telegram/bot'
 
 TOKEN = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
 POEMS_URL = 'https://www.culture.ru/literature/poems'
-
-# rubocop:enable Style/MutableConstant
-
 LAST_PAGE = 791
 
 @greeting = IO.read 'greeting.txt'
@@ -25,35 +20,19 @@ def tg_button(text)
   Telegram::Bot::Types::KeyboardButton.new(text: text)
 end
 
-keyboard = [
-  [
-    tg_button('комплимент'),
-    tg_button('совет')
-  ],
-  [
-    tg_button('быконуть'),
-    tg_button('стих')
-  ]
-  # [
-  #   tg_button('поприветствовать'),
-  #   tg_button('попрощаться')
-  # ]
-]
-
-@markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
+@markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: [
+  [tg_button('комплимент'), tg_button('совет')],
+  [tg_button('быконуть'), tg_button('стих')]
+])
 
 def send_message(text, is_rude: false)
   @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: @markup
   @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if is_rude
 end
 
-# rubocop:disable Metrics/MethodLength
-# rubocop:disable Metrics/AbcSize
-# rubocop:disable Metrics/CyclomaticComplexity
-
 def get_text_from_message(message)
   case message
-  when '/start', 'поприветствовать'
+  when '/start'
     @greeting
   when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
@@ -62,20 +41,16 @@ def get_text_from_message(message)
   when 'быконуть'
     @rude_phrases.sample
   when 'стих'
-    response = HTTParty.get("#{POEMS_URL}?page=#{rand(1..LAST_PAGE + 1)}")
+    response = HTTParty.get "#{POEMS_URL}?page=#{rand(1..LAST_PAGE + 1)}"
     html = response.body if response.code == 200
-    document = Nokogiri::HTML(html)
+    document = Nokogiri::HTML html
 
-    poem_elements = document.search('div.entity-cards_item.col')
+    poem_elements = document.search 'div.entity-cards_item.col'
     poem_element = poem_elements[rand(0..poem_elements.length)]
 
     poem_author = poem_element.search('a.card-heading_subtitle').text
     poem_title = poem_element.search('a.card-heading_title-link').text
-
-    poem_text = ''
-    poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).each do |text_fragment|
-      poem_text << "#{text_fragment}\n"
-    end
+    poem_text = poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).join("\n")
 
     "#{poem_author}\n\n#{poem_title}\n\n#{poem_text}"
   when 'попрощаться'
@@ -85,16 +60,11 @@ def get_text_from_message(message)
   end
 end
 
-# rubocop:enable Metrics/MethodLength
-# rubocop:enable Metrics/AbcSize
-# rubocop:enable Metrics/CyclomaticComplexity
-
 Telegram::Bot::Client.run TOKEN do |bot|
   @bot = bot
 
   bot.listen do |message|
-    @chat_id = message.chat.id
-    message = message.text
+    @chat_id, message = message.chat.id, message.text
     text = get_text_from_message message
     send_message text, is_rude: message == 'быконуть'
   end
