@@ -44,7 +44,7 @@ def get_text_from_message(message)
     document = Nokogiri::HTML html
 
     poem_elements = document.search 'div.entity-cards_item.col'
-    poem_element = poem_elements[rand(..poem_elements.length)]
+    poem_element = poem_elements[rand(0..poem_elements.length)]
 
     poem_author = poem_element.search('a.card-heading_subtitle').text
     poem_title = poem_element.search('a.card-heading_title-link').text
