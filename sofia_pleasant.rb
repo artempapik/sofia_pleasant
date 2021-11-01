@@ -1,6 +1,7 @@
-require 'httparty'
+require 'net/http'
 require 'nokogiri'
 require 'telegram/bot'
+require 'uri'
 
 TOKEN = '2003556781:AAGJRuQ7kEhcSlEYS5TSaZI6JwqDFtevVnI'
 POEMS_URL = 'https://www.culture.ru/literature/poems'
@@ -16,9 +17,7 @@ LAST_PAGE = 791
 @rude_stickers = IO.readlines('sticker_ids.txt').collect(&:strip)
 @unable_responses = IO.readlines('unable_responses.txt').collect(&:strip)
 
-def tg_button(text)
-  Telegram::Bot::Types::KeyboardButton.new(text: text)
-end
+def tg_button(text) = Telegram::Bot::Types::KeyboardButton.new(text: text)
 
 @markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: [
   [tg_button('комплимент'), tg_button('совет')],
@@ -41,12 +40,11 @@ def get_text_from_message(message)
   when 'быконуть'
     @rude_phrases.sample
   when 'стих'
-    response = HTTParty.get "#{POEMS_URL}?page=#{rand(1..LAST_PAGE + 1)}"
-    html = response.body if response.code == 200
+    html = Net::HTTP.get(URI "#{POEMS_URL}?page=#{rand(1..LAST_PAGE + 1)}")
     document = Nokogiri::HTML html
 
     poem_elements = document.search 'div.entity-cards_item.col'
-    poem_element = poem_elements[rand(0..poem_elements.length)]
+    poem_element = poem_elements[rand(..poem_elements.length)]
 
     poem_author = poem_element.search('a.card-heading_subtitle').text
     poem_title = poem_element.search('a.card-heading_title-link').text
