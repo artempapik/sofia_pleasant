@@ -63,7 +63,11 @@ Telegram::Bot::Client.run TOKEN do |bot|
 
   bot.listen do |message|
     @chat_id, message = message.chat.id, message.text
-    text = get_text_from_message message
-    send_message text, is_rude: message == 'быконуть'
+
+    begin
+      text = get_text_from_message message
+      send_message text, is_rude: message == 'быконуть'
+    rescue
+    end
   end
 end
