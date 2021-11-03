@@ -73,7 +73,7 @@ def inline_tg_button(text) = Telegram::Bot::Types::InlineKeyboardButton.new(text
 def send_message(text, is_rude: false, is_goroscope: false)
   if is_goroscope
     keyboard = @ru_to_en_horoscope_sign.keys.map(&method(:inline_tg_button))
-    markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard, remove_keyboard: true, one_time_keyboard: true)
+    markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard)
   else
     markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: [
       [tg_button('комплимент'), tg_button('совет')],
