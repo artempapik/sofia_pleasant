@@ -63,7 +63,7 @@ def get_horoscope(sign)
   xml = Crack::XML.parse(document.search('body').inner_html)
   horoscope = JSON.parse(xml.to_json)['horo']
   en_sign = @ru_to_en_horoscope_sign[sign]
-  horoscope[en_sign]['today']
+  "#{sign.upcase}\n#{horoscope[en_sign]['today']}"
 end
 
 def tg_button(text) = Telegram::Bot::Types::KeyboardButton.new(text: text)
@@ -82,7 +82,8 @@ def send_message(text, is_rude: false, is_goroscope: false)
     ])
   end
   
-  @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+  message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+  @message_id_to_delete = message_to_delete['result']['message_id'] if is_goroscope
   @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if is_rude
 end
 
@@ -112,6 +113,11 @@ Telegram::Bot::Client.run TOKEN do |bot|
 
   bot.listen do |message|
     @chat_id = message.chat.id if message.attributes[:chat]
+
+    if @message_id_to_delete
+      @bot.api.edit_message_reply_markup chat_id: @chat_id, message_id: @message_id_to_delete
+      @message_id_to_delete = nil
+    end
 
     if @chat_id
       message = message.attributes[:text] ? message.text : message.data
