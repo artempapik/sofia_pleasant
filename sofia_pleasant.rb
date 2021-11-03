@@ -20,15 +20,17 @@ end
 
 LAST_POEM_PAGE = get_last_poem_page
 
+def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
+
 @greeting = IO.read 'greeting.txt'
-@compliments = IO.readlines('compliments.txt').collect(&:strip)
-@pleasant_smiles = IO.readlines('pleasant_smiles.txt').collect(&:strip)
-@sad_phrases = IO.readlines('sad_phrases.txt').collect(&:strip)
-@sad_smiles = IO.readlines('sad_smiles.txt').collect(&:strip)
-@advices = IO.readlines('advices.txt').collect(&:strip)
-@rude_phrases = IO.readlines('rude_phrases.txt').collect(&:strip)
-@rude_stickers = IO.readlines('sticker_ids.txt').collect(&:strip)
-@unable_responses = IO.readlines('unable_responses.txt').collect(&:strip)
+@compliments = read_file_and_split('compliments.txt')
+@pleasant_smiles = read_file_and_split('pleasant_smiles.txt')
+@sad_phrases = read_file_and_split('sad_phrases.txt')
+@sad_smiles = read_file_and_split('sad_smiles.txt')
+@advices = read_file_and_split('advices.txt')
+@rude_phrases = read_file_and_split('rude_phrases.txt')
+@rude_stickers = read_file_and_split('sticker_ids.txt')
+@unable_responses = read_file_and_split('unable_responses.txt')
 
 def get_poem
   document = get_html_document "#{POEMS_URL}?page=#{rand(1..LAST_POEM_PAGE + 1)}"
