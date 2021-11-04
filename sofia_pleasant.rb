@@ -122,9 +122,13 @@ Telegram::Bot::Client.run TOKEN do |bot|
     end
 
     if @chat_id
-      message = message.attributes[:text] ? message.text : message.data
-      text = @ru_to_en_horoscope_sign.keys.include?(message) ? get_horoscope(message) : get_text_from_message(message)
-      send_message text, is_rude: message == 'быконуть', is_goroscope: message == 'гараскоп'
+      message = message.attributes
+      message = message[:text] || message[:data] || nil
+
+      if message
+        text = @ru_to_en_horoscope_sign.keys.include?(message) ? get_horoscope(message) : get_text_from_message(message)
+        send_message text, is_rude: message == 'быконуть', is_goroscope: message == 'гараскоп'
+      end
     end
   end
 end
