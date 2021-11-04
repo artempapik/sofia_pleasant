@@ -121,14 +121,12 @@ Telegram::Bot::Client.run TOKEN do |bot|
       @message_id_to_delete = nil
     end
 
-    if @chat_id
-      message = message.attributes
-      message = message[:text] || message[:data] || nil
+    message = message.attributes
+    message = message[:text] || message[:data] || nil
 
-      if message
-        text = @ru_to_en_horoscope_sign.keys.include?(message) ? get_horoscope(message) : get_text_from_message(message)
-        send_message text, is_rude: message == 'быконуть', is_goroscope: message == 'гараскоп'
-      end
+    if @chat_id and message
+      text = @ru_to_en_horoscope_sign.keys.include?(message) ? get_horoscope(message) : get_text_from_message(message)
+      send_message text, is_rude: message == 'быконуть', is_goroscope: message == 'гараскоп'
     end
   end
 end
