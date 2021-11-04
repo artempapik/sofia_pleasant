@@ -114,14 +114,14 @@ Telegram::Bot::Client.run TOKEN do |bot|
   @bot = bot
 
   bot.listen do |message|
-    @chat_id = message.chat.id if message.attributes[:chat]
+    message = message.attributes
+    @chat_id = message[:chat][:id] if message[:chat]
 
     if @message_id_to_delete
       @bot.api.edit_message_reply_markup chat_id: @chat_id, message_id: @message_id_to_delete
       @message_id_to_delete = nil
     end
 
-    message = message.attributes
     message = message[:text] || message[:data] || nil
 
     if @chat_id and message
