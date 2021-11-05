@@ -20,20 +20,32 @@ end
 
 LAST_POEM_PAGE = get_last_poem_page
 
+@greeting = IO.read 'greeting.txt'
+
 def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 
-@greeting = IO.read 'greeting.txt'
-@compliments = read_file_and_split('compliments.txt')
-@pleasant_smiles = read_file_and_split('pleasant_smiles.txt')
-@sad_phrases = read_file_and_split('sad_phrases.txt')
-@sad_smiles = read_file_and_split('sad_smiles.txt')
-@advices = read_file_and_split('advices.txt')
-@rude_phrases = read_file_and_split('rude_phrases.txt')
-@rude_stickers = read_file_and_split('sticker_ids.txt')
-@unable_responses = read_file_and_split('unable_responses.txt')
+file_paths = [
+  'compliments',
+  'pleasant_smiles',
+  'sad_phrases',
+  'sad_smiles',
+  'advices',
+  'rude_phrases',
+  'sticker_ids',
+  'unable_responses'
+].map { |path| "#{path}.txt" }
 
-def get_poem
-  document = get_html_document "#{POEMS_URL}?page=#{rand(1..LAST_POEM_PAGE + 1)}"
+@compliments,
+@pleasant_smiles,
+@sad_phrases,
+@sad_smiles,
+@advices,
+@rude_phrases,
+@rude_stickers,
+@unable_responses = file_paths.map(&method(:read_file_and_split))
+
+def get_random_poem
+  document = get_html_document("#{POEMS_URL}?page=#{rand(1..LAST_POEM_PAGE + 1)}")
 
   poem_elements = document.search 'div.entity-cards_item.col'
   poem_element = poem_elements[rand(0..poem_elements.length)]
@@ -61,7 +73,7 @@ end
 }
 
 def get_horoscope(sign)
-  document = get_html_document HOROSCOPE_URL
+  document = get_html_document(HOROSCOPE_URL)
   xml = Crack::XML.parse(document.search('body').inner_html)
   horoscope = JSON.parse(xml.to_json)['horo']
   en_sign = @ru_to_en_horoscope_sign[sign]
@@ -71,62 +83,88 @@ end
 def tg_button(text) = Telegram::Bot::Types::KeyboardButton.new(text: text)
 
 def inline_tg_button(text) = Telegram::Bot::Types::InlineKeyboardButton.new(text: text, callback_data: text)
+
+MESSAGE_TYPE = { :rude => 0, :horoscope => 1 }
   
-def send_message(text, is_rude: false, is_goroscope: false)
-  if is_goroscope
-    keyboard = @ru_to_en_horoscope_sign.keys.map(&method(:inline_tg_button))
-    markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard)
-  else
-    markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: [
+def send_message(text, message_type, markup)
+  message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+  @message_id_to_delete = message_to_delete['result']['message_id'] if message_type == MESSAGE_TYPE[:horoscope]
+  @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if message_type == MESSAGE_TYPE[:rude]
+end
+
+def get_text_with_type_and_reply_markup_from_message(message)
+  case message
+  when '/start'
+    keyboard = [
       [tg_button('комплимент'), tg_button('совет')],
       [tg_button('быконуть'), tg_button('стих')],
       [tg_button('гараскоп')]
-    ])
-  end
-  
-  message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
-  @message_id_to_delete = message_to_delete['result']['message_id'] if is_goroscope
-  @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if is_rude
-end
-
-def get_text_from_message(message)
-  case message
-  when '/start'
-    @greeting
+    ]
+    markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
+    return @greeting, markup
   when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
   when 'совет'
     @advices.sample
   when 'быконуть'
-    @rude_phrases.sample
+    return @rude_phrases.sample, MESSAGE_TYPE[:rude]
   when 'стих'
-    get_poem
+    get_random_poem
   when 'гараскоп'
-    "выбирите ваш знак (может это страстный телец?)\nя не подсказываю если че."
+    keyboard = @ru_to_en_horoscope_sign.keys.map(&method(:inline_tg_button))
+    markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard)
+    # TODO: implement more phrases + file reading
+    return "выбирите ваш знак (может это страстный телец?)\nя не подсказываю если че.", MESSAGE_TYPE[:horoscope], markup
   when '/goodbye'
-    "#{@sad_phrases.sample} #{@sad_smiles.sample}"
+    text = "#{@sad_phrases.sample} #{@sad_smiles.sample}"
+    markup = Telegram::Bot::Types::ReplyKeyboardRemove.new(remove_keyboard: true)
+    return text, markup
   else
     @unable_responses.sample
   end
 end
 
-Telegram::Bot::Client.run TOKEN do |bot|
-  @bot = bot
-
-  bot.listen do |message|
-    message = message.attributes
-    @chat_id = message[:chat][:id] if message[:chat]
-
-    if @message_id_to_delete
-      @bot.api.edit_message_reply_markup chat_id: @chat_id, message_id: @message_id_to_delete
-      @message_id_to_delete = nil
-    end
-
-    message = message[:text] || message[:data] || nil
-
-    if @chat_id and message
-      text = @ru_to_en_horoscope_sign.keys.include?(message) ? get_horoscope(message) : get_text_from_message(message)
-      send_message text, is_rude: message == 'быконуть', is_goroscope: message == 'гараскоп'
+def run_bot
+  Telegram::Bot::Client.run TOKEN do |bot|
+    @bot = bot
+  
+    bot.listen do |message|
+      message = message.attributes
+      @chat_id = message[:chat][:id] if message[:chat]
+  
+      if @message_id_to_delete
+        @bot.api.edit_message_reply_markup(chat_id: @chat_id, message_id: @message_id_to_delete)
+        @message_id_to_delete = nil
+      end
+  
+      message = message[:text] || message[:data] || nil
+  
+      if @chat_id and message
+        if @ru_to_en_horoscope_sign.keys.include?(message)
+          text = get_horoscope(message)
+        else
+          text, message_type, markup = get_text_with_type_and_reply_markup_from_message(message)
+        end
+  
+        send_message(text, message_type, markup)
+      end
     end
   end
 end
+
+run_bot
+
+# require 'uri'
+# require 'net/http'
+# require 'openssl'
+
+# url = URI 'https://community-open-weather-map.p.rapidapi.com/weather?q=kamianske,ua&lat=0&lon=0&callback=test&id=2172797&lang=ru&units=imperial&mode=xml'
+
+# http = Net::HTTP.new(url.host, url.port)
+# http.use_ssl = true
+
+# request = Net::HTTP::Get.new url
+# request['x-rapidapi-key'] = '322872341amsh91f7c6576949217p10a086jsndcaed814811a'
+
+# response = http.request request
+# puts response.read_body
