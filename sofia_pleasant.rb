@@ -84,7 +84,11 @@ def tg_button(text) = Telegram::Bot::Types::KeyboardButton.new(text: text)
 
 def inline_tg_button(text) = Telegram::Bot::Types::InlineKeyboardButton.new(text: text, callback_data: text)
 
-MESSAGE_TYPE = { :rude => 0, :horoscope => 1 }
+MESSAGE_TYPE = {
+  :none => 0,
+  :rude => 1,
+  :horoscope => 2
+}
   
 def send_message(text, message_type, markup)
   message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
@@ -101,7 +105,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
       [tg_button('гараскоп')]
     ]
     markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
-    return @greeting, markup
+    return @greeting, MESSAGE_TYPE[:none], markup
   when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
   when 'совет'
@@ -118,7 +122,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when '/goodbye'
     text = "#{@sad_phrases.sample} #{@sad_smiles.sample}"
     markup = Telegram::Bot::Types::ReplyKeyboardRemove.new(remove_keyboard: true)
-    return text, markup
+    return text, MESSAGE_TYPE[:none], markup
   else
     @unable_responses.sample
   end
