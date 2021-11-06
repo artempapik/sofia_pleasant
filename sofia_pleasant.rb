@@ -22,8 +22,6 @@ LAST_POEM_PAGE = get_last_poem_page
 
 @greeting = IO.read 'greeting.txt'
 
-def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
-
 file_paths = [
   'compliments',
   'pleasant_smiles',
@@ -32,8 +30,19 @@ file_paths = [
   'advices',
   'rude_phrases',
   'sticker_ids',
-  'unable_responses'
+  'unable_responses',
+  'yes_no_answers',
+  'possible_yes_no_answers',
+  'smiles_answers',
+  'possible_smiles_answers',
+  'love_answers',
+  'possible_love_answers',
+  'horoscope_answers',
+  'argue_answers',
+  'possible_argue_answers'
 ].map { |path| "#{path}.txt" }
+
+def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 
 @compliments,
 @pleasant_smiles,
@@ -42,7 +51,16 @@ file_paths = [
 @advices,
 @rude_phrases,
 @rude_stickers,
-@unable_responses = file_paths.map(&method(:read_file_and_split))
+@unable_responses,
+@yes_no_answers,
+@possible_yes_no_answers,
+@smiles_answers,
+@possible_smiles_answers,
+@love_answers,
+@possible_love_answers,
+@horoscope_answers,
+@argue_answers,
+@possible_argue_answers = file_paths.map(&method(:read_file_and_split))
 
 def get_random_poem
   document = get_html_document("#{POEMS_URL}?page=#{rand(1..LAST_POEM_PAGE + 1)}")
@@ -72,59 +90,97 @@ end
   'рыбы' => 'pisces'
 }
 
-def get_horoscope(sign)
+def get_horoscope(sign, day = 'today')
   document = get_html_document(HOROSCOPE_URL)
   xml = Crack::XML.parse(document.search('body').inner_html)
   horoscope = JSON.parse(xml.to_json)['horo']
   en_sign = @ru_to_en_horoscope_sign[sign]
-  "#{sign.upcase}\n#{horoscope[en_sign]['today']}"
+  "#{sign.upcase}\n#{horoscope[en_sign][day]}"
 end
 
 def tg_button(text) = Telegram::Bot::Types::KeyboardButton.new(text: text)
 
 def inline_tg_button(text) = Telegram::Bot::Types::InlineKeyboardButton.new(text: text, callback_data: text)
 
-MESSAGE_TYPE = {
+TEXT_TYPE = {
   :none => 0,
   :rude => 1,
   :horoscope => 2
 }
   
-def send_message(text, message_type, markup)
+def send_message(text, text_type, markup)
   message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
-  @message_id_to_delete = message_to_delete['result']['message_id'] if message_type == MESSAGE_TYPE[:horoscope]
-  @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if message_type == MESSAGE_TYPE[:rude]
+  @message_id_to_delete = message_to_delete['result']['message_id'] if text_type == TEXT_TYPE[:horoscope]
+  @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if text_type == TEXT_TYPE[:rude]
+end
+
+def get_start_keyboard_markup
+  keyboard = [
+    [tg_button('комплимент'), tg_button('совет')],
+    [tg_button('быконуть'), tg_button('стих')],
+    [tg_button('гараскоп')]
+  ]
+  Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
+end
+
+def get_inline_keyboard_markup(text)
+  keyboard = inline_tg_button(text)
+  Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard)
 end
 
 def get_text_with_type_and_reply_markup_from_message(message)
   case message
+
   when '/start'
-    keyboard = [
-      [tg_button('комплимент'), tg_button('совет')],
-      [tg_button('быконуть'), tg_button('стих')],
-      [tg_button('гараскоп')]
-    ]
-    markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: keyboard)
-    return @greeting, MESSAGE_TYPE[:none], markup
+    return @greeting, TEXT_TYPE[:none], get_start_keyboard_markup
+
   when 'комплимент'
     "#{@compliments.sample} #{@pleasant_smiles.sample}"
+
   when 'совет'
     @advices.sample
+
   when 'быконуть'
-    return @rude_phrases.sample, MESSAGE_TYPE[:rude]
+    return @rude_phrases.sample, TEXT_TYPE[:rude]
+
   when 'стих'
     get_random_poem
+
   when 'гараскоп'
     keyboard = @ru_to_en_horoscope_sign.keys.map(&method(:inline_tg_button))
     markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: keyboard)
-    # TODO: implement more phrases + file reading
-    return "выбирите ваш знак (может это страстный телец?)\nя не подсказываю если че.", MESSAGE_TYPE[:horoscope], markup
+    return @horoscope_answers.sample, TEXT_TYPE[:horoscope], markup
+
+  when *@ru_to_en_horoscope_sign.keys
+    @chosen_sign = message
+    return get_horoscope(message), TEXT_TYPE[:none], get_inline_keyboard_markup('хочу на завтра')
+
+  when 'хочу на завтра'
+    return get_horoscope(@chosen_sign, 'tomorrow'), TEXT_TYPE[:none], get_inline_keyboard_markup('а можна на послезавтра?(')
+
+  when 'а можна на послезавтра?('
+    return get_horoscope(@chosen_sign, 'tomorrow02'), TEXT_TYPE[:none], get_start_keyboard_markup
+
+  when *@possible_yes_no_answers
+    @yes_no_answers.sample
+
+  when *@possible_smiles_answers
+    @smiles_answers.sample
+
+  when *@possible_love_answers
+    @love_answers.sample
+
+  when *@possible_argue_answers
+    @argue_answers.sample
+
   when '/goodbye'
     text = "#{@sad_phrases.sample} #{@sad_smiles.sample}"
     markup = Telegram::Bot::Types::ReplyKeyboardRemove.new(remove_keyboard: true)
-    return text, MESSAGE_TYPE[:none], markup
+    return text, TEXT_TYPE[:none], markup
+
   else
     @unable_responses.sample
+
   end
 end
 
@@ -144,13 +200,8 @@ def run_bot
       message = message[:text] || message[:data] || nil
   
       if @chat_id and message
-        if @ru_to_en_horoscope_sign.keys.include?(message)
-          text = get_horoscope(message)
-        else
-          text, message_type, markup = get_text_with_type_and_reply_markup_from_message(message)
-        end
-  
-        send_message(text, message_type, markup)
+        text, text_type, markup = get_text_with_type_and_reply_markup_from_message(message.downcase)
+        send_message(text, text_type, markup)
       end
     end
   end
