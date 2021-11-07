@@ -41,7 +41,9 @@ file_paths = [
   'possible_love_answers',
   'horoscope_answers',
   'argue_answers',
-  'possible_argue_answers'
+  'possible_argue_answers',
+  'desire_answers',
+  'possible_desire_answers'
 ].map { |path| "#{path}.txt" }
 
 def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
@@ -62,7 +64,9 @@ def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 @possible_love_answers,
 @horoscope_answers,
 @argue_answers,
-@possible_argue_answers = file_paths.map(&method(:read_file_and_split))
+@possible_argue_answers,
+@desire_answers,
+@possible_desire_answers = file_paths.map(&method(:read_file_and_split))
 
 def get_html_document(url)
   html = Net::HTTP.get(URI url)
@@ -238,6 +242,9 @@ def get_text_with_type_and_reply_markup_from_message(message)
 
   when *@possible_argue_answers
     @argue_answers.sample
+
+  when *@possible_desire_answers
+    @desire_answers.sample
 
   when 'почему молчишь?'
     'ты что меня не слышишь?'
