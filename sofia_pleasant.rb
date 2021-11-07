@@ -127,7 +127,7 @@ def to_celsius(fahrenheit) = (fahrenheit - 32) / 1.8
 def get_temp(response, type) = "<code>#{to_celsius(response['main']["temp_#{type}"]).round(1)}°C</code>"
 
 class Fixnum
-  def format_time = self.to_s.rjust(2, '0')
+  def format_time = (self + 2).to_s.rjust(2, '0')
 end
 
 def get_start_end_daytime(response, type)
