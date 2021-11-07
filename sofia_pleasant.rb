@@ -116,6 +116,7 @@ end
   'киев' => 'Kyiv',
   'львов' => 'Lviv',
   'ха' => 'Kharkiv',
+  'адэса' => 'Odesa',
   'каменск' => 'Kamianske',
   'влн' => 'Vilniansk',
   'зп' => 'Zaporijia',
