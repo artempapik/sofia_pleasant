@@ -113,6 +113,9 @@ def get_horoscope(sign, day = 'today')
 end
 
 @abbreviation_to_city = {
+  'киев' => 'Kyiv',
+  'львов' => 'Lviv',
+  'ха' => 'Kharkiv',
   'каменск' => 'Kamianske',
   'влн' => 'Vilniansk',
   'зп' => 'Zaporijia',
@@ -121,11 +124,15 @@ end
 
 def to_celsius(fahrenheit) = (fahrenheit - 32) / 1.8
 
-def get_temp(response, type) = to_celsius(response['main']["temp_#{type}"]).round(1)
+def get_temp(response, type) = "<code>#{to_celsius(response['main']["temp_#{type}"]).round(1)}°C</code>"
 
-def get_start_end_day(response, type)
+class Fixnum
+  def format_time = self.to_s.rjust(2, '0')
+end
+
+def get_start_end_daytime(response, type)
   daytime = Time.at(response['sys'][type])
-  "#{daytime.hour}:#{daytime.min}"
+  "<b>#{daytime.hour.format_time}:#{daytime.min.format_time}</b>"
 end
 
 def get_weather(abbreviation)
@@ -141,8 +148,8 @@ def get_weather(abbreviation)
   weather_response = JSON.parse(response.read_body[5..-2])
 
   city_name = abbreviation == 'влн' ? 'Вольнянск' : weather_response['name']
-  sunrise = get_start_end_day(weather_response, 'sunrise')
-  sunset = get_start_end_day(weather_response, 'sunset')
+  sunrise = get_start_end_daytime(weather_response, 'sunrise')
+  sunset = get_start_end_daytime(weather_response, 'sunset')
   description = weather_response['weather'].map { |weather| weather['description'] }.join(', ')
   wind_speed = weather_response['wind']['speed']
   temp_min = get_temp(weather_response, 'min')
@@ -151,11 +158,11 @@ def get_weather(abbreviation)
   city_name = "вы выбрали #{city_name})"
   sunrise = "восход у нас в #{sunrise} утра"
   sunset = "а закат в #{sunset} вечора"
-  description = "как оно: #{description}"
-  wind_speed = "скорость ветра при этом составляет #{wind_speed} м/с"
-  temp_min = "ну само прохладно будет при #{temp_min}°C"
-  temp_max = "а само тепло при #{temp_max}°C"
-  goodbye = "хорошего вам дня досвидания"
+  description = "как оно: <u>#{description}</u>"
+  wind_speed = "скорость ветра при этом составляет <i>#{wind_speed} м/с</i>"
+  temp_min = "ну само прохладно будет при #{temp_min}"
+  temp_max = "а само тепло при #{temp_max}"
+  goodbye = "хорошего вам дня <s>дотвидания</s>"
 
   "#{city_name}\n\n#{sunrise}, #{sunset}\n#{description}\n\n#{wind_speed}\n\n#{temp_min}\n#{temp_max}\n\n\n#{goodbye}"
 end
@@ -214,7 +221,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
     return get_horoscope(@chosen_sign, 'tomorrow02')
 
   when @constants[:weather]
-    return 'выбирай с хорошыми дорогами', @constants[:weather], get_inline_keyboard_markup(*cities)
+    return 'выбирай с хорошыми дорогами золотце', @constants[:weather], get_inline_keyboard_markup(*cities)
 
   when *cities
     return get_weather(message)
@@ -249,6 +256,12 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when 'повтор'
     'и обратно'
 
+  when 'там где клен шумит'
+    'над речной волной'
+
+  when 'говорили мы'
+    'о ЛЮЮЮЮЮЮБВИ    с та бой'
+
   when '/goodbye'
     text = "#{@sad_phrases.sample} #{@sad_smiles.sample}"
     remove_keyboard_markup = Telegram::Bot::Types::ReplyKeyboardRemove.new(remove_keyboard: true)
@@ -261,7 +274,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
 end
 
 def send_message(text, text_type, markup)
-  message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup
+  message_to_delete = @bot.api.send_message chat_id: @chat_id, text: text, reply_markup: markup, parse_mode: 'html'
   @message_id_to_delete = message_to_delete['result']['message_id'] if text_type == @constants[:horoscope] or text_type == @constants[:weather]
   @bot.api.send_sticker chat_id: @chat_id, sticker: @rude_stickers.sample if text_type == @constants[:rude]
 end
