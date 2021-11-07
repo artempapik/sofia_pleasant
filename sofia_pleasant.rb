@@ -260,6 +260,9 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when 'там где клен шумит'
     'над речной волной'
 
+  when 'над речной волной'
+    'гаварИли мы'
+
   when 'говорили мы'
     'о ЛЮЮЮЮЮЮБВИ    с та бой'
 
