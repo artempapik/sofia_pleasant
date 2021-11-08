@@ -90,7 +90,7 @@ def get_random_poem
   poem_title = poem_element.search('a.card-heading_title-link').text
   poem_text = poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).join("\n")
 
-  "#{poem_author}\n\n#{poem_title}\n\n#{poem_text}"
+  "<b>#{poem_author}</b>\n\n#<code>{poem_title}</code>\n\n#{poem_text}"
 end
 
 @ru_to_en_horoscope_sign = {
@@ -113,7 +113,7 @@ def get_horoscope(sign, day = 'today')
   xml = Crack::XML.parse(document.search('body').inner_html)
   horoscope = JSON.parse(xml.to_json)['horo']
   en_sign = @ru_to_en_horoscope_sign[sign]
-  "#{sign.upcase}\n#{horoscope[en_sign][day]}"
+  "<code>#{sign.upcase}</code>\n#{horoscope[en_sign][day]}"
 end
 
 @abbreviation_to_city = {
@@ -135,7 +135,7 @@ class Fixnum
   def format_time = (self + 2).to_s.rjust(2, '0')
 end
 
-def get_start_end_daytime(response, type)
+def get_daytime(response, type)
   daytime = Time.at(response['sys'][type])
   "<b>#{daytime.hour.format_time}:#{daytime.min.format_time}</b>"
 end
@@ -153,8 +153,8 @@ def get_weather(abbreviation)
   weather_response = JSON.parse(response.read_body[5..-2])
 
   city_name = abbreviation == 'влн' ? 'Вольнянск' : weather_response['name']
-  sunrise = get_start_end_daytime(weather_response, 'sunrise')
-  sunset = get_start_end_daytime(weather_response, 'sunset')
+  sunrise = get_daytime(weather_response, 'sunrise')
+  sunset = get_daytime(weather_response, 'sunset')
   description = weather_response['weather'].map { |weather| weather['description'] }.join(', ')
   wind_speed = weather_response['wind']['speed']
   temp_min = get_temp(weather_response, 'min')
