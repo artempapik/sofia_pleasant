@@ -307,6 +307,18 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when 'говорили мы'
     'о ЛЮЮЮЮЮЮБВИ    с та бой'
 
+  when 'иногда'
+    'я жду тебя'
+
+  when 'как звезда'
+    'веду тебя'
+
+  when 'и тогда'
+    'мне кажеца.'
+
+  when 'что плывут облака подо мной'
+    'ооооооооой'
+
   when '/goodbye'
     text = "#{@sad_phrases.sample} #{@sad_smiles.sample}"
     remove_keyboard_markup = Telegram::Bot::Types::ReplyKeyboardRemove.new(remove_keyboard: true)
