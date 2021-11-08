@@ -33,6 +33,7 @@ file_paths = [
   'rude_phrases',
   'sticker_ids',
   'unable_responses',
+  'weather_phrases',
   'yes_no_answers',
   'possible_yes_no_answers',
   'smiles_answers',
@@ -43,7 +44,9 @@ file_paths = [
   'argue_answers',
   'possible_argue_answers',
   'desire_answers',
-  'possible_desire_answers'
+  'possible_desire_answers',
+  'what_answers',
+  'possible_what_answers'
 ].map { |path| "#{path}.txt" }
 
 def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
@@ -56,6 +59,7 @@ def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 @rude_phrases,
 @rude_stickers,
 @unable_responses,
+@weather_phrases,
 @yes_no_answers,
 @possible_yes_no_answers,
 @smiles_answers,
@@ -66,7 +70,9 @@ def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 @argue_answers,
 @possible_argue_answers,
 @desire_answers,
-@possible_desire_answers = file_paths.map(&method(:read_file_and_split))
+@possible_desire_answers,
+@what_answers,
+@possible_what_answers = file_paths.map(&method(:read_file_and_split))
 
 def get_html_document(url)
   html = Net::HTTP.get(URI url)
@@ -226,7 +232,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
     return get_horoscope(@chosen_sign, 'tomorrow02')
 
   when @constants[:weather]
-    return 'выбирай с хорошыми дорогами золотце', @constants[:weather], get_inline_keyboard_markup(*cities)
+    return @weather_phrases.sample, @constants[:weather], get_inline_keyboard_markup(*cities)
 
   when *cities
     return get_weather(message)
@@ -246,13 +252,16 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when *@possible_desire_answers
     @desire_answers.sample
 
+  when *@possible_what_answers
+    @what_answers.sample
+
   when 'почему молчишь?'
     'ты что меня не слышишь?'
 
   when 'мне не говоришь'
     'что без меня не дышыш..'
 
-  when 'кароче'
+  when 'короче', 'кароче'
     'понятна'
 
   when 'тебе с ним приятно'
