@@ -90,7 +90,7 @@ def get_random_poem
   poem_title = poem_element.search('a.card-heading_title-link').text
   poem_text = poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).join("\n")
 
-  "<b>#{poem_author}</b>\n\n#<code>{poem_title}</code>\n\n#{poem_text}"
+  "<b>#{poem_author}</b>\n\n<code>#{poem_title}</code>\n\n#{poem_text}"
 end
 
 @ru_to_en_horoscope_sign = {
