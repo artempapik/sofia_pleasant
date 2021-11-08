@@ -46,7 +46,9 @@ file_paths = [
   'desire_answers',
   'possible_desire_answers',
   'what_answers',
-  'possible_what_answers'
+  'possible_what_answers',
+  'dont_answers',
+  'possible_dont_answers'
 ].map { |path| "#{path}.txt" }
 
 def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
@@ -72,7 +74,9 @@ def read_file_and_split(filename) = IO.readlines(filename).collect(&:strip)
 @desire_answers,
 @possible_desire_answers,
 @what_answers,
-@possible_what_answers = file_paths.map(&method(:read_file_and_split))
+@possible_what_answers,
+@dont_answers,
+@possible_dont_answers = file_paths.map(&method(:read_file_and_split))
 
 def get_html_document(url)
   html = Net::HTTP.get(URI url)
@@ -255,11 +259,32 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when *@possible_what_answers
     @what_answers.sample
 
+  when *@possible_dont_answers
+    @dont_answers.sample
+
   when 'почему молчишь?'
     'ты что меня не слышишь?'
 
   when 'мне не говоришь'
     'что без меня не дышыш..'
+
+  when 'я устала ждать'
+    'пока короткие гудки'
+
+  when 'заменят грустные слова'
+    'ааа аааа!!'
+
+  when 'может ты поймешь'
+    'что совершил ошибку'
+
+  when 'снова на лице'
+    'увижу я улыбаку?'
+
+  when 'ну ответь же мне'
+    'я разрываю тишину....'
+
+  when 'ведь без тебя я не могу'
+    'МНЕ ТАК ХОТЕЛОСЬ БЫ СКАЗАТЬ ТЕБЕ ЧТО ВСЁ СО МНОЙ В ПАРЯДКЕ'
 
   when 'короче', 'кароче'
     'понятна'
