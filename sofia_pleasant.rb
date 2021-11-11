@@ -84,14 +84,15 @@ def get_html_document(url)
 end
 
 def get_last_poem_page
-  document = get_html_document POEMS_URL
+  document = get_html_document(POEMS_URL)
   document.search('a.pagination_item.js-pagination-item')[-1].text.to_i
 end
 
 LAST_POEM_PAGE = get_last_poem_page
 
 def get_random_poem
-  document = get_html_document("#{POEMS_URL}?page=#{rand(1..LAST_POEM_PAGE + 1)}")
+  random_page = rand(1..LAST_POEM_PAGE + 1)
+  document = get_html_document("#{POEMS_URL}?page=#{random_page}")
 
   poem_elements = document.search 'div.entity-cards_item.col'
   poem_element = poem_elements[rand(0..poem_elements.length)]
@@ -127,14 +128,14 @@ def get_horoscope(sign, day = 'today')
 end
 
 @abbreviation_to_city = {
-  'киев' => 'Kyiv',
-  'львов' => 'Lviv',
-  'ха' => 'Kharkiv',
-  'адэса' => 'Odesa',
+  'киев'    => 'Kyiv',
+  'львов'   => 'Lviv',
+  'ха'      => 'Kharkiv',
+  'адэса'   => 'Odesa',
   'каменск' => 'Kamianske',
-  'влн' => 'Vilniansk',
-  'зп' => 'Zaporijia',
-  'млт' => 'Melitopol'
+  'влн'     => 'Vilniansk',
+  'зп'      => 'Zaporijia',
+  'млт'     => 'Melitopol'
 }
 
 def to_celsius(fahrenheit) = (fahrenheit - 32) / 1.8
@@ -262,7 +263,7 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when *@possible_dont_answers
     @dont_answers.sample
 
-  when 'почему молчишь?'
+  when 'почему молчишь?', 'почему не спишь', 'почему не спишь?'
     'ты что меня не слышишь?'
 
   when 'мне не говоришь'
