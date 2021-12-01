@@ -101,7 +101,7 @@ def get_random_poem
   poem_title = poem_element.search('a.card-heading_title-link').text
   poem_text = poem_element.search('a.card-heading_description-link').text.split(/(?=[А-Я])/).join("\n")
 
-  "<b>#{poem_author}</b>\n\n<code>#{poem_title}</code>\n\n#{poem_text}"
+  "<b>#{poem_author}</b>\n\n#{poem_title}\n\n<code>#{poem_text}</code>"
 end
 
 @ru_to_en_horoscope_sign = {
@@ -263,7 +263,10 @@ def get_text_with_type_and_reply_markup_from_message(message)
   when *@possible_dont_answers
     @dont_answers.sample
 
-  when 'почему молчишь?', 'почему не спишь', 'почему не спишь?'
+  when 'почему молчишь', 'почему молчишь?'
+    'а вот тоже не молчи, ок да? ага'
+
+  when 'почему не спишь', 'почему не спишь?'
     'ты что меня не слышишь?'
 
   when 'мне не говоришь'
